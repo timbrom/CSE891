@@ -19,48 +19,34 @@ TreeAnalyzer::~TreeAnalyzer()
 {
 }
 
-void TreeAnalyzer::loadData( const char *gzDetail, const char *gzHistoric )
+void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
 {
   cout << "loading data" << endl;
-
-  const string gzExt = ".gz";
-  string gzDetailFile;
-  string detailFile;
-  string gzHistoricFile;
-  string historicFile;
   
-  const string gunzipCommand = "gunzip ";
-  const string gzipCommand = "gzip ";
-  string systemCommand;
-
-  gzDetailFile = gzDetail;
-  gzHistoricFile = gzHistoric;
-  detailFile = gzDetailFile;
-  detailFile.resize(gzDetailFile.size() - gzExt.size());
-  historicFile = gzHistoricFile;
-  historicFile.resize(gzHistoricFile.size() - gzExt.size());
-
-  systemCommand = gunzipCommand + gzDetailFile;
-  system( systemCommand.c_str() );
-  
-  systemCommand = gunzipCommand + gzHistoricFile;
-  system( systemCommand.c_str() );
-  
-  ifstream final( detailFile.c_str() );
+  ifstream final( detailFile );
   if ( final.fail() ){
     cerr << "error opening " << detailFile << ". Exiting" << endl;
     exit( -1 );
   }
   
-  int id, parentId, treeDepth, birth, death;
-  double dummy;
+  int id, parentId, treeDepth, birth, death, m_histPopSize;
+  string dummy;
   string genome; // new
   m_finalPopSize = 0;
+  m_histPopSize = 0;
 
+  // Skip lines that start with a # - they are comments. Also skip empty lines
+  while (final.peek() == '#' || final.peek() == '\n')
+  {
+    final.ignore(1024, '\n'); 
+  }
+  
   // read in the data we are interested in
-  while ( final >> id >> parentId >> dummy >> dummy >> dummy >> dummy
-	  >> dummy >> dummy >> dummy >> birth >> death >> treeDepth >>
-	  genome ) {     // note: death = -1 for alive organisms
+  while ( final >> id    >> dummy  >> dummy >> parentId  >> dummy 
+                >> dummy >> dummy  >> dummy >> dummy     >> dummy 
+                >> dummy >> birth  >> death >> treeDepth >> dummy 
+                >> dummy >> genome >> dummy >> dummy     >> dummy  ) {     
+      // note: death = -1 for alive organisms
 
     if ( treeDepth > m_maxTreeDepth )
       m_maxTreeDepth = treeDepth;
@@ -72,35 +58,41 @@ void TreeAnalyzer::loadData( const char *gzDetail, const char *gzHistoric )
   }
   final.close();
 
-  cout << "final pop files opened ok" << endl;
+  cout << "final pop files opened ok: " << m_finalPopSize << " organisms found" << endl;
 
-  ifstream historic( historicFile.c_str() );
+  ifstream historic( historicFile );
   if ( historic.fail() ) {
     cerr << "error opening " << historicFile << ". Exiting" << endl;
     exit( -1 );
   }
   
-  while ( historic >> id >> parentId >> dummy >> dummy >> dummy >>
-	  dummy >> dummy >> dummy >> dummy >> birth >> death >>
-	  treeDepth >> genome ) {
+  // Skip lines that start with a # - they are comments. Also skip empty lines
+  while (historic.peek() == '#' || historic.peek() == '\n')
+  {
+    historic.ignore(1024, '\n'); 
+  }
+
+  while ( historic >> id    >> dummy  >> dummy >> parentId  >> dummy 
+                >> dummy >> dummy  >> dummy >> dummy     >> dummy 
+                >> dummy >> birth  >> death >> treeDepth >> dummy 
+                >> dummy >> genome  ) {     
 
     m_genebank.createGenotype( id, parentId, treeDepth, birth, death,
 			       genome );
+    historic.ignore(1024, '\n'); // The number of fields changes in the historic file 
+                                 // once the organisms start dying out - we don't care 
+                                 // about those fields, but this is necessary to skip 
+                                 // them when they do exist.
+    m_histPopSize += 1;
   }
   historic.close();
     
-  cout << "historic files opened ok" << endl;
+  cout << "historic files opened ok: " << m_histPopSize << " organisms found" << endl;
 
   m_genebank.setupParentPointers();
   //  Genotype *g = m_genebank.getGenotype( m_finalPop[0] );
   m_genebank.checkCoalescence( m_genebank.getGenotype( m_finalPop[0] ) );
   //  m_genebank.print();
-  
-  systemCommand = gzipCommand + detailFile;
-  system( systemCommand.c_str() );
-  
-  systemCommand = gzipCommand + historicFile;
-  system( systemCommand.c_str() );  
 }
 
 
@@ -114,8 +106,8 @@ void TreeAnalyzer::calculateDistanceMatrix()
     m_distanceMatrix[i].resize( m_finalPopSize );
   
   for ( int i=0; i<m_finalPopSize; i++ ){
-    //    cout <<  "[" << i+1 << "/" << m_finalPopSize << "] ";
-    //    cout.flush();
+    cout <<  "[" << i+1 << "/" << m_finalPopSize << "] ";
+    cout.flush();
     for ( int j=i; j<m_finalPopSize; j++ ){
 	int ID1 = m_finalPop[i];
 	int ID2 = m_finalPop[j];

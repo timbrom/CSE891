@@ -8,7 +8,7 @@ CC= g++
 #
 # build options
 #
-CFLAGS= -O3 #$(INCLUDE)
+CFLAGS= -O3 -g #$(INCLUDE)
 #
 # standard libraries
 #

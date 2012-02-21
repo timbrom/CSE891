@@ -140,8 +140,8 @@ int Genebank::calcTreeDist( const Genotype *g1, const Genotype *g2 ) const
   }
   gmut = g;
   
-  //  cout << "Common ancestor of " << g1->getId() << " and " << g2->getId()
-  //       << " is " << gmut->getId() << endl;
+  //cout << "Common ancestor of " << g1->getId() << " and " << g2->getId()
+  //     << " is " << gmut->getId() << endl;
 
   // now we untag everything again
   g = g1;
@@ -153,6 +153,7 @@ int Genebank::calcTreeDist( const Genotype *g1, const Genotype *g2 ) const
   }
   g->setTagged( false );
   //  cout << "Untag " << g->getId() << endl;
+  //cout << g1->getTreeDepth() << " " << g2->getTreeDepth() << " " << gmut->getTreeDepth() << endl;
   return g1->getTreeDepth() + g2->getTreeDepth() - 2*gmut->getTreeDepth();
 }
 
