@@ -31,6 +31,7 @@ void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
   }
   
   int id, parentId, treeDepth, birth, death, m_histPopSize;
+  string parentIdStr;
   string dummy;
   string genome; // new
   m_finalPopSize = 0;
@@ -43,15 +44,19 @@ void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
   }
   
   // read in the data we are interested in
-  while ( final >> id    >> dummy  >> dummy >> parentId  >> dummy 
+  while ( final >> id    >> dummy  >> dummy >> parentIdStr  >> dummy 
                 >> dummy >> dummy  >> dummy >> dummy     >> dummy 
                 >> dummy >> birth  >> death >> treeDepth >> dummy 
-                >> dummy >> genome >> dummy >> dummy     >> dummy  ) {     
+                >> dummy >> genome >> dummy >> dummy     >> dummy  ) {
       // note: death = -1 for alive organisms
-
     if ( treeDepth > m_maxTreeDepth )
       m_maxTreeDepth = treeDepth;
-    
+
+    if (parentIdStr.compare("(none)") == 0)
+        parentId = 0;
+    else
+        parentId = atoi(parentIdStr.c_str());
+
     m_genebank.createGenotype( id, parentId, treeDepth, birth, death,
 			       genome );
     m_finalPop.push_back( id );
@@ -73,10 +78,15 @@ void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
     historic.ignore(1024, '\n'); 
   }
 
-  while ( historic >> id    >> dummy  >> dummy >> parentId  >> dummy 
+  while ( historic >> id    >> dummy  >> dummy >> parentIdStr  >> dummy 
                 >> dummy >> dummy  >> dummy >> dummy     >> dummy 
                 >> dummy >> birth  >> death >> treeDepth >> dummy 
                 >> dummy >> genome  ) {     
+
+    if (parentIdStr.compare("(none)") == 0)
+        parentId = 0;
+    else
+        parentId = atoi(parentIdStr.c_str());
 
     m_genebank.createGenotype( id, parentId, treeDepth, birth, death,
 			       genome );
@@ -93,7 +103,7 @@ void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
   m_genebank.setupParentPointers();
   //  Genotype *g = m_genebank.getGenotype( m_finalPop[0] );
   m_genebank.checkCoalescence( m_genebank.getGenotype( m_finalPop[0] ) );
-  //  m_genebank.print();
+  //m_genebank.print();
 }
 
 
@@ -116,6 +126,7 @@ void TreeAnalyzer::calculateDistanceMatrix()
     cout << "\r";
     cout << "Progress: " << numCmpsCompleted << "/" << numCmps << " (" << setprecision(2) << (double)numCmpsCompleted/(double)numCmps*100.0 << "%)";
     cout.flush();
+    cout << "Avg: " << m_aveDistance << " Max: " << m_maxDistance << endl;
     //cout <<  "[" << i+1 << "/" << m_finalPopSize << "] ";
     //cout.flush();
     for ( int j=i; j<m_finalPopSize; j++ ){

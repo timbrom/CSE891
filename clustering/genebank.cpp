@@ -68,10 +68,15 @@ void Genebank::setupParentPointers()
 
   for ( ; it != m_genotypeMap.end(); it++ ){
     int parentId = (*it).second->getParentId();
-    if ( parentId >= 0 ){
+    if ( parentId > 0 ){
       parent = m_genotypeMap.find( parentId );
       (*it).second->setParent( (*parent).second );
       (*parent).second->incrementCount();
+    }
+    else if (parentId == 0)
+    {
+      (*it).second->setParent(0);
+      (*it).second->setCoalescent();
     }
   }
 }
@@ -80,11 +85,11 @@ void Genebank::setupParentPointers()
 bool Genebank::checkCoalescence( Genotype *g )
 {
   if ( g == 0 || g->isCoalescent() ){
-    //    cout << g->getId() << " is already coalescent." << endl;
+        //cout << g->getId() << " is already coalescent." << endl;
     return true;
   }
   //else
-  //  cout << g->getId() << " is not coalescent. Checking parent..." << endl;
+    //cout << g->getId() << " is not coalescent. Checking parent..." << endl;
 
 
   Genotype *parent = g->getParent();
@@ -95,9 +100,9 @@ bool Genebank::checkCoalescence( Genotype *g )
     // if parent is coalescent and has only a count of 1, then we are
     // coalescent as well
 
-    //  cout << "parent " << parent->getId() << " is coalescent, checking count..." << endl;
+      //cout << "parent " << parent->getId() << " is coalescent, checking count..." << endl;
     if ( parent == 0 || parent->getCount() == 1 ){
-      // cout << "count is 1. " << g->getId() << " is coalescent." << endl;
+       //cout << "count is 1. " << g->getId() << " is coalescent." << endl;
       g->setCoalescent();
       return true;
     }
@@ -123,7 +128,7 @@ int Genebank::calcTreeDist( const Genotype *g1, const Genotype *g2 ) const
   // first we tag all parents of g1 till the last coalescent ancestor
   g = g1;
   while( !g->isCoalescent() ){
-    //    cout << "Tagging " << g->getId() << endl;
+    //cout << "Tagging " << g->getId() << endl;
     g->setTagged();
     g = g->getParent();
     assert( g!= 0 );
@@ -153,8 +158,16 @@ int Genebank::calcTreeDist( const Genotype *g1, const Genotype *g2 ) const
   }
   g->setTagged( false );
   //  cout << "Untag " << g->getId() << endl;
-  //cout << g1->getTreeDepth() << " " << g2->getTreeDepth() << " " << gmut->getTreeDepth() << endl;
-  return g1->getTreeDepth() + g2->getTreeDepth() - 2*gmut->getTreeDepth();
+
+  int dist = g1->getTreeDepth() + g2->getTreeDepth() - 2*gmut->getTreeDepth();
+  if (dist < 0)
+  {
+    cout << g1->getId() << ": " << g1->getTreeDepth() << endl;
+    cout << g2->getId() << ": " << g2->getTreeDepth() << endl;
+    cout << gmut->getId() << ": " << gmut->getTreeDepth() << endl;
+    exit(-1);
+  }
+  return dist;
 }
 
 int Genebank::calcHammingDist( const Genotype *g1, const Genotype *g2 ) const
