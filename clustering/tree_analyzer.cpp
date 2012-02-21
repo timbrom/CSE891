@@ -8,6 +8,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <string> 
+#include <iomanip>
 
 TreeAnalyzer::TreeAnalyzer() 
   : m_maxTreeDepth( 0 ), m_aveDistance( 0 ), m_maxDistance( 0 )
@@ -99,15 +100,24 @@ void TreeAnalyzer::loadData( const char *detailFile, const char *historicFile )
 void TreeAnalyzer::calculateDistanceMatrix()
 {
   cout << "calculating distance matrix" << endl;
+
+  // Precompute stuff for time estimate
+  int numCmps = (m_finalPopSize * (m_finalPopSize + 1)) / 2;
+  int numCmpsCompleted = 0;
+
+  cout << "Number of comparisons: " << numCmps << endl;
   
   // reserve enough space
   m_distanceMatrix.resize( m_finalPopSize );
   for ( int i=0; i<m_finalPopSize; i++ )
     m_distanceMatrix[i].resize( m_finalPopSize );
-  
+    
   for ( int i=0; i<m_finalPopSize; i++ ){
-    cout <<  "[" << i+1 << "/" << m_finalPopSize << "] ";
+    cout << "\r";
+    cout << "Progress: " << numCmpsCompleted << "/" << numCmps << " (" << setprecision(2) << (double)numCmpsCompleted/(double)numCmps*100.0 << "%)";
     cout.flush();
+    //cout <<  "[" << i+1 << "/" << m_finalPopSize << "] ";
+    //cout.flush();
     for ( int j=i; j<m_finalPopSize; j++ ){
 	int ID1 = m_finalPop[i];
 	int ID2 = m_finalPop[j];
@@ -123,6 +133,7 @@ void TreeAnalyzer::calculateDistanceMatrix()
 	if ( dist > m_maxDistance )
 	  m_maxDistance = dist;
     }
+    numCmpsCompleted += m_finalPopSize - i;
   }
 
   m_aveDistance /= static_cast<double>(m_finalPopSize*m_finalPopSize);
