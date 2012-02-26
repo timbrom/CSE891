@@ -1,0 +1,16 @@
+#!/bin/bash -login
+#PBS -l walltime=2:00:00,mem=50m
+#PBS -l nodes=1:ppn=1,feature=gbe
+#PBS -M bromtimo@msu.edu
+#PBS -m n
+#PBS -j oe
+#PBS -t 1-100
+#PBS -N clustering
+
+PREFIX=/mnt/scratch/olsonran/data/avida/speciation
+EXPERIMENT=bottleneck-1-size-5
+
+mkdir -p ~/clustering/${EXPERIMENT}
+cd ~/clustering/${EXPERIMENT}
+
+~/CSE891/clustering/treeCS ${PREFIX}/${EXPERIMENT}/run${PBS_ARRAYID}/detail-999999.spop ${PREFIX}/${EXPERIMENT}/run${PBS_ARRAYID}/detail-historic-999999.spop ~/clustering/${EXPERIMENT}/output${PBS_ARRAYID}.txt 151467
